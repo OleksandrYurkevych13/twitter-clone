@@ -36,7 +36,7 @@ const Posts = ({ feedType, username, userId }) => {
 				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong");
 				}
-
+ 
 				return data;
 			} catch (error) {
 				throw new Error(error);
