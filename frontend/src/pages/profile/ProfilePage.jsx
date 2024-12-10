@@ -11,10 +11,11 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { formatMemberSinceDate } from "../../utils/date";
 import useFollow from "../../hooks/useFollow"
-import toast from "react-hot-toast";
+
+import useUpdateUserProfile from "../../hooks/useUpdateUserProfile";
 
 
 const ProfilePage = () => {
@@ -29,7 +30,7 @@ const ProfilePage = () => {
 	const profileImgRef = useRef(null);
 
 	const { username } = useParams();
-	const queryClient = useQueryClient();
+	
 	const { follow, isPending } = useFollow();
 
 	const { data: authUser } = useQuery({ queryKey:["authUser"]})
@@ -61,41 +62,7 @@ const ProfilePage = () => {
 		refetch()
 	}, [username, refetch]);
 
-	const { mutate: updateProfile, isPending: isUpdatingProfile } = useMutation({
-		mutationFn: async () => {
-			try {
-				const res = await fetch(`/api/users/update`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json"
-					},
-					body: JSON.stringify({
-						coverImg,
-						profileImg,
-					})
-				})
-				const data =await res.json();
-				if (!res.ok) {
-					throw new Error(data.error || "Somethind went wrong");
-					
-				}
-				return data;
-			} catch (error) {
-				throw new Error(error);
-				
-			}
-		},
-		onSuccess: () => {
-			toast.success("Profile updated");
-			Promise.all([
-				queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-				queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
-			])
-		},
-		onError: (error) => {
-			toast.error(error.message); 
-		}
-	});
+	const { isUpdatingProfile, updateProfile } = useUpdateUserProfile();
 
 	const MemberSinceDate = formatMemberSinceDate(user?.createdAt);
 	const isMyProfile = authUser._id === user?._id;
@@ -192,9 +159,13 @@ const ProfilePage = () => {
 								{(coverImg || profileImg) && (
 									<button
 										className='btn btn-primary rounded-full btn-sm text-white px-4 ml-2'
-										onClick={() => updateProfile()}
+										onClick={async () => {
+											await updateProfile({ coverImg, profileImg });
+											setProfileImg(null);
+											setCoverImg(null);
+										}}
 									>
-										{isUpdatingProfile ? "Updating...": "Update"}
+										{isUpdatingProfile ? "Updating..." : "Update"}
 									</button>
 								)}
 							</div>
@@ -212,12 +183,12 @@ const ProfilePage = () => {
 											<>
 												<FaLink className='w-3 h-3 text-slate-500' />
 												<a
-													href='https://youtube.com/@asaprogrammer_'
+													href='https://github.com/OleksandrYurkevych13?tab=repositories'
 													target='_blank'
 													rel='noreferrer'
 													className='text-sm text-blue-500 hover:underline'
 												>
-													youtube.com/@asaprogrammer_
+													{user?.link}
 												</a>
 											</>
 										</div>
